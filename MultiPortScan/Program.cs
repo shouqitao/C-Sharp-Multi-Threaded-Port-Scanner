@@ -1,24 +1,21 @@
 ﻿using System;
 
-namespace MultiPortScan
-{
+namespace MultiPortScan {
     /// <summary>
     /// A Console type Multi Port TCP Scanner
     /// Author : Philip Murray
     /// </summary>
 
-    class Program
-    {
+    internal class Program {
 
-        static void Main(string[] args)
-        {
+        private static void Main(string[] args) {
             string host;
             int portStart;
             int portStop;
             int Threads;
             int timeout;
 
-            youGotItWrong: //goto: Start Again
+        youGotItWrong: //goto: Start Again
 
             //this is for the user to select a host ip
             string ip;
@@ -43,18 +40,13 @@ namespace MultiPortScan
             int number;
             bool resultStart = int.TryParse(startPort, out number);
 
-            if (resultStart)
-            {
+            if (resultStart) {
                 portStart = int.Parse(startPort);
-            }
-
-            else
-            {
+            } else {
                 Console.WriteLine("Try Again NOOOB!!");
                 goto youGotItWrong;
-               // return;
+                // return;
             }
-
 
             //this is for the end port
             string endPort;
@@ -64,23 +56,18 @@ namespace MultiPortScan
             Console.Write("Enter A End Port : ");
             endPort = Console.ReadLine();
             Console.WriteLine();
-          
 
             //THIS CHECKS TO SEE IF IT THE END PORT CAN BE PARSED OUT
             int number2;
             bool resultEnd = int.TryParse(endPort, out number2);
 
-            if (resultEnd)
-            {
+            if (resultEnd) {
                 portStop = int.Parse(endPort);
-            }
-
-            else
-            {
+            } else {
                 Console.WriteLine("Try Again NOOOB!!");
 
                 goto youGotItWrong;
-               // return;
+                // return;
             }
 
             //this is how many threads will be started
@@ -91,27 +78,22 @@ namespace MultiPortScan
             Console.Write("Enter How Many Threads To Run : ");
             threadsToRun = Console.ReadLine();
             Console.WriteLine();
-          
 
             //THIS CHECKS TO SEE IF IT THE END PORT CAN BE PARSED OUT
             int number3;
             bool resultThreads = int.TryParse(threadsToRun, out number3);
 
-            if (resultThreads)
-            {
+            if (resultThreads) {
                 Threads = int.Parse(threadsToRun);
-            }
-
-            else
-            {
+            } else {
                 Console.WriteLine("Try Again NOOOB!!");
 
                 goto youGotItWrong;
-                
+
                 // return;
             }
 
-            //this is how many threads will be started 
+            //this is how many threads will be started
             string tcpTimeout;
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine("Normal Timeout amount is between 1 - 10 secs ( 1 = 1 second)(higher timeout = higher accuracy)");
@@ -119,71 +101,48 @@ namespace MultiPortScan
             Console.Write("Enter Timeout : ");
             tcpTimeout = Console.ReadLine();
             Console.WriteLine();
-          
+
             //THIS CHECKS TO SEE IF IT THE timeout CAN BE PARSED OUT
             int number4;
             bool resultTimeout = int.TryParse(tcpTimeout, out number4);
 
-            if (resultTimeout)
-            {
+            if (resultTimeout) {
                 timeout = int.Parse(tcpTimeout) * 1000;
-             
-            }
-
-            else
-            {
+            } else {
                 Console.WriteLine("Try Again NOOOB!!");
 
                 goto youGotItWrong;
                 //  return;
             }
 
-            try
-            {
-
+            try {
                 host = ip;
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 Console.WriteLine(ex.Message);
                 return;
             }
 
-            if (resultStart == true && resultEnd == true)
-            {
-                try
-                {
-
+            if (resultStart == true && resultEnd == true) {
+                try {
                     portStart = int.Parse(startPort);
                     portStop = int.Parse(endPort);
-
-                }
-                catch (Exception ex)
-                {
+                } catch (Exception ex) {
                     Console.WriteLine(ex.Message);
                     return;
                 }
-
             }
-            if (resultThreads == true)
-            {
-                try
-                {
-
+            if (resultThreads == true) {
+                try {
                     Threads = int.Parse(threadsToRun);
-                }
-                catch (Exception ex)
-                {
+                } catch (Exception ex) {
                     Console.WriteLine(ex.Message);
 
                     return;
                 }
             }
 
-            PortScanner ps = new PortScanner(host, portStart, portStop , timeout);
+            PortScanner ps = new PortScanner(host, portStart, portStop, timeout);
             ps.start(Threads);
-
         }
-        
     }
 }

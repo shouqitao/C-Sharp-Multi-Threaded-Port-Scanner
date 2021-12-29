@@ -6,82 +6,59 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 
-namespace MultiPortScan
-{
-    class PortScanner
-    {
+namespace MultiPortScan {
 
+    internal class PortScanner {
         private string host;
         private PortList portList;
         private int workThread = 0;
         private int count = 0;
-        public int tcpTimeout ;
+        public int tcpTimeout;
 
-        private class isTcpPortOpen
-        {
+        private class isTcpPortOpen {
             public TcpClient MainClient { get; set; }
             public bool tcpOpen { get; set; }
         }
 
-
-        public PortScanner(string host, int portStart, int portStop , int timeout)
-        {
+        public PortScanner(string host, int portStart, int portStop, int timeout) {
             this.host = host;
             portList = new PortList(portStart, portStop);
             tcpTimeout = timeout;
-           
         }
 
-        public void start(int threadCounter)
-        {
-            for (int i = 0; i < threadCounter; i++)
-            {
-
+        public void start(int threadCounter) {
+            for (int i = 0; i < threadCounter; i++) {
                 Thread thread1 = new Thread(new ThreadStart(RunScanTcp));
                 thread1.Start();
                 workThread++;
             }
-
         }
 
-        public void RunScanTcp()
-        {
-          
+        public void RunScanTcp() {
             int port;
 
-            //while there are more ports to scan 
-            while ((port = portList.NextPort()) != -1)
-            {
+            //while there are more ports to scan
+            while ((port = portList.NextPort()) != -1) {
                 count = port;
 
                 Thread.Sleep(1); //lets be a good citizen to the cpu
-                
+
                 Console.Title = "Current Port Count : " + count.ToString();
-                
-                try
-                {
 
+                try {
                     Connect(host, port, tcpTimeout);
-
-                }
-                catch
-                {        
+                } catch {
                     continue;
                 }
-              
+
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine();
                 Console.WriteLine("TCP Port {0} is open ", port);
-                try
-                {
+                try {
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     //grabs the banner / header info etc..
-                    Console.WriteLine(BannerGrab(host, port, tcpTimeout)); 
-                   
-                   
-                }
-                catch (Exception ex)
-                {
+                    Console.WriteLine(BannerGrab(host, port, tcpTimeout));
+                } catch (Exception ex) {
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine("Could not retrieve the Banner ::Original Error = " + ex.Message);
                     Console.ResetColor();
@@ -89,62 +66,47 @@ namespace MultiPortScan
                 Console.ForegroundColor = ConsoleColor.Green;
                 string webpageTitle = GetPageTitle("http://" + host + ":" + port.ToString());
 
-                if(!string.IsNullOrWhiteSpace(webpageTitle))
-                {
+                if (!string.IsNullOrWhiteSpace(webpageTitle)) {
                     //this gets the html title of the webpage
-                    Console.WriteLine("Webpage Title = " + webpageTitle + "Found @ :: " + "http://" + host + ":" + port.ToString()); 
-                  
-                }
-                else
-                {
+                    Console.WriteLine("Webpage Title = " + webpageTitle + "Found @ :: " + "http://" + host + ":" + port.ToString());
+                } else {
                     Console.ForegroundColor = ConsoleColor.DarkMagenta;
                     Console.WriteLine("Maybe A Login popup or a Service Login Found @ :: " + host + ":" + port.ToString());
                     Console.ResetColor();
                 }
-               
 
                 Console.ResetColor();
-
             }
 
+            if (Interlocked.Decrement(ref workThread) == 0) {
+                Console.WriteLine();
+                Console.WriteLine("Scan Complete !!!");
 
-            if (Interlocked.Decrement(ref workThread) == 0)
-            {                    
-                    Console.WriteLine();
-                    Console.WriteLine("Scan Complete !!!");
-
-                    Console.ReadKey();
-
+                Console.ReadKey();
             }
-
         }
-    //method for returning tcp client connected or not connected
-        public TcpClient Connect(string hostName, int port, int timeout)
-        {
+
+        //method for returning tcp client connected or not connected
+        public TcpClient Connect(string hostName, int port, int timeout) {
             var newClient = new TcpClient();
 
-            var state = new isTcpPortOpen
-            {
+            var state = new isTcpPortOpen {
                 MainClient = newClient, tcpOpen = true
             };
 
             IAsyncResult ar = newClient.BeginConnect(hostName, port, AsyncCallback, state);
             state.tcpOpen = ar.AsyncWaitHandle.WaitOne(timeout, false);
 
-            if (state.tcpOpen == false || newClient.Connected == false)
-            {
+            if (state.tcpOpen == false || newClient.Connected == false) {
                 throw new Exception();
-
             }
             return newClient;
         }
 
         //method for Grabbing a webpage banner / header information
-        public string BannerGrab(string hostName, int port, int timeout)
-        {
-            var newClient = new TcpClient(hostName ,port);
+        public string BannerGrab(string hostName, int port, int timeout) {
+            var newClient = new TcpClient(hostName, port);
 
-           
             newClient.SendTimeout = timeout;
             newClient.ReceiveTimeout = timeout;
             NetworkStream ns = newClient.GetStream();
@@ -164,52 +126,37 @@ namespace MultiPortScan
             return response;
         }
 
-
         //async callback for tcp clients
-        void AsyncCallback(IAsyncResult asyncResult)
-        {
+        private void AsyncCallback(IAsyncResult asyncResult) {
             var state = (isTcpPortOpen)asyncResult.AsyncState;
             TcpClient client = state.MainClient;
 
-            try
-            {
+            try {
                 client.EndConnect(asyncResult);
-            }
-            catch
-            {
+            } catch {
                 return;
             }
 
-            if (client.Connected && state.tcpOpen)
-            {
+            if (client.Connected && state.tcpOpen) {
                 return;
             }
-               
+
             client.Close();
         }
 
-        static string GetPageTitle(string link)
-        {
-            try
-            {
-
+        private static string GetPageTitle(string link) {
+            try {
                 WebClient x = new WebClient();
                 string sourcedata = x.DownloadString(link);
                 string getValueTitle = Regex.Match(sourcedata, @"\<title\b[^>]*\>\s*(?<Title>[\s\S]*?)\</title\>", RegexOptions.IgnoreCase).Groups["Title"].Value;
-              
+
                 return getValueTitle;
-              
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("Could not connect. Error:" + ex.Message);
                 Console.ResetColor();
                 return "";
             }
-
-           
         }
-
     }
 }
